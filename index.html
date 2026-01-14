@@ -4,6 +4,82 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <style>
+    .friends-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(6px);
+
+      z-index: 5000;
+    }
+
+    .friends-content {
+      position: relative;
+      width: 90%;
+      max-width: 420px;
+
+      background: rgba(20, 20, 30, 0.9);
+      color: white;
+
+      border-radius: 18px;
+      padding: 24px;
+
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    .friends-content h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+
+    .friends-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: 22px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .friends-close:hover {
+      opacity: 1;
+    }
+
+    .friends-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+
+      background: linear-gradient(135deg, #6d6dff, #9b7bff);
+      color: white;
+
+      border: none;
+      border-radius: 999px;
+      padding: 14px 22px;
+
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+
+      box-shadow: 0 12px 30px rgba(109, 109, 255, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      z-index: 1000;
+    }
+
+    .friends-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(109, 109, 255, 0.45);
+    }
+
+    .friends-btn:active {
+      transform: scale(0.96);
+    }
+
     /* Overlay */
     .modal-overlay {
       position: fixed;
@@ -701,7 +777,7 @@
 
         await loadSentRequests(user);
         loadIncomingRequests(user);
-
+        loadFriends();
         // Get YOUR profile
         const yourSnap = await getDoc(doc(db, "users", user.uid));
         if (!yourSnap.exists()) return;
@@ -780,6 +856,7 @@
           alert("Failed to decline request");
         }
       };
+     
 
     </script>
      
@@ -799,6 +876,72 @@
         </button>
       </div>
     </div>
+    <button id="friendsBtn" class="friends-btn">
+      Friends
+    </button>
+    <div id="friendsModal" class="friends-modal">
+      <div class="friends-content">
+        <span class="friends-close" onclick="closeFriends()">×</span>
+        <h2>Your Friends</h2>
+        <div id="friendsList">
+          <span style="color:var(--muted)">No friends yet</span>
+        </div>
+      </div>
+    </div>
+    <script>
+      const friendsBtn = document.getElementById("friendsBtn");
+
+      friendsBtn.addEventListener("click", () => {
+        openFriends();
+      });
+
+      window.openFriends = async () => {
+        document.getElementById("friendsModal").style.display = "flex";
+        await loadFriends();
+      };
+
+
+      window.closeFriends = () => {
+        document.getElementById("friendsModal").style.display = "none";
+      };
+      async function loadFriends() {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const friendsList = document.getElementById("friendsList");
+        friendsList.innerHTML = "";
+
+        const q = query(
+          collection(db, "friends"),
+          where("users", "array-contains", user.uid)
+        );
+
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          friendsList.innerHTML = `<span style="color:var(--muted)">No friends yet</span>`;
+          return;
+        }
+
+        for (const docSnap of snap.docs) {
+          const data = docSnap.data();
+          const friendUid = data.users.find(uid => uid !== user.uid);
+
+          const friendSnap = await getDoc(doc(db, "users", friendUid));
+          if (!friendSnap.exists()) continue;
+
+          const friend = friendSnap.data();
+
+          const div = document.createElement("div");
+          div.style.padding = "10px 0";
+          div.style.borderBottom = "1px solid var(--border)";
+          div.innerHTML = `<strong>${friend.name}</strong>`;
+
+          friendsList.appendChild(div);
+        }
+      }
+
+    </script>
 
 </body>
 </html>
