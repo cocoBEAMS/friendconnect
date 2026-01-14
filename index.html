@@ -807,7 +807,7 @@
       window.sendFriendRequest = async (targetUid) => {
         const user = auth.currentUser;
         if (!user) return alert("You must be logged in");
-
+         if (sentRequests.has(targetUid)) return;
         const requestId = `${user.uid}_${targetUid}`;
 
         try {
@@ -828,18 +828,33 @@
         try {
           const batch = writeBatch(db);
 
-          // ✅ Only create YOUR friend doc
+          const myUid = auth.currentUser.uid;
+
+          // Friend doc for ME
           const myFriendRef = doc(
             db,
             "friends",
-            `${auth.currentUser.uid}_${fromUid}`
+            `${myUid}_${fromUid}`
+          );
+
+          // Friend doc for THEM
+          const theirFriendRef = doc(
+            db,
+            "friends",
+            `${fromUid}_${myUid}`
           );
 
           const requestRef = doc(db, "friendRequests", requestId);
 
           batch.set(myFriendRef, {
-            owner: auth.currentUser.uid,
+            owner: myUid,
             friend: fromUid,
+            createdAt: Date.now()
+          });
+
+          batch.set(theirFriendRef, {
+            owner: fromUid,
+            friend: myUid,
             createdAt: Date.now()
           });
 
@@ -855,6 +870,7 @@
           alert("Failed to accept friend request");
         }
       };
+
 
 
 
