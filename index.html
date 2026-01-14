@@ -823,36 +823,38 @@
         }
       };
       window.acceptRequest = async (requestId, fromUid) => {
-        const user = auth.currentUser;
-        if (!user) return;
-
         try {
-          // Create friendship for YOU
-          await setDoc(doc(db, "friends", `${user.uid}_${fromUid}`), {
-            owner: user.uid,
+          const batch = writeBatch(db);
+
+          const myFriendRef = doc(db, "friends", `${auth.currentUser.uid}_${fromUid}`);
+          const theirFriendRef = doc(db, "friends", `${fromUid}_${auth.currentUser.uid}`);
+          const requestRef = doc(db, "friendRequests", requestId);
+
+          batch.set(myFriendRef, {
+            owner: auth.currentUser.uid,
             friend: fromUid,
             createdAt: Date.now()
           });
 
-          // Create friendship for THEM
-          await setDoc(doc(db, "friends", `${fromUid}_${user.uid}`), {
+          batch.set(theirFriendRef, {
             owner: fromUid,
-            friend: user.uid,
+            friend: auth.currentUser.uid,
             createdAt: Date.now()
           });
 
-          // Delete the friend request
-          await deleteDoc(doc(db, "friendRequests", requestId));
+          batch.delete(requestRef);
 
-          // Refresh UI
-          sentRequests.delete(fromUid);
-          loadIncomingRequests(user);
-          loadFriends();
+          await batch.commit();
+
+          await loadFriends();
+          await loadIncomingRequests(auth.currentUser);
+
         } catch (err) {
-          console.error(err);
-          alert("Failed to accept request");
+          console.error("ACCEPT FAILED:", err);
+          alert("Failed to accept friend request");
         }
       };
+
 
 
        
