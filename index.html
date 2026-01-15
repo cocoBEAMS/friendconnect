@@ -4,6 +4,26 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <style>
+    .unfriend-btn {
+      background: transparent;
+      border: 1px solid #ff4d4d;
+      color: #ff4d4d;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .unfriend-btn:hover {
+      background: #ff4d4d;
+      color: white;
+    }
+
+    .add-friend.sent {
+      opacity: 0.6;
+      cursor: default;
+    }
+
     .friends-modal {
       position: fixed;
       inset: 0;
@@ -566,6 +586,7 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
       let sentRequests = new Set();
+      let friendsSet = new Set();
 
       /* ✅ NOW everything exists */
       async function loadIncomingRequests(user) {
@@ -667,12 +688,15 @@
             <div class="tag">${isYou ? "You" : "Member"}</div>
           </div>
 
-       ${!isYou
-         ? sentRequests.has(profile.uid)
-           ? `<button class="add-friend sent" disabled>Request Sent</button>`
-           : `<button class="add-friend" onclick="sendFriendRequest('${profile.uid}')">Add Friend</button>`
-         : ""
-       }
+      ${!isYou
+        ? friendsSet.has(profile.uid)
+          ? `<button class="add-friend" disabled>Friends ✓</button>`
+          : sentRequests.has(profile.uid)
+            ? `<button class="add-friend sent" disabled>Request Sent</button>`
+            : `<button class="add-friend" onclick="sendFriendRequest('${profile.uid}')">Add Friend</button>`
+        : ""
+      }
+
 
 
         `;
@@ -778,8 +802,10 @@
         authModal.style.display = "none";
 
         await loadSentRequests(user);
-        loadIncomingRequests(user);
-        loadFriends();
+        await loadFriends();       
+        await loadIncomingRequests(user);
+
+        
         // Get YOUR profile
         const yourSnap = await getDoc(doc(db, "users", user.uid));
         if (!yourSnap.exists()) return;
@@ -818,17 +844,40 @@
             createdAt: Date.now()
           });
 
-          alert("Friend request sent!");
+          // ✅ Update local state immediately
+          sentRequests.add(targetUid);
+
+          // ✅ Re-render UI
+          profilesGrid.innerHTML = "";
+
+          // Render YOU first
+          const yourSnap = await getDoc(doc(db, "users", user.uid));
+          if (yourSnap.exists()) {
+            renderProfile({ ...yourSnap.data(), uid: user.uid }, true);
+
+          }
+
+          // Render all other users
+          const allUsersSnap = await getDocs(collection(db, "users"));
+          allUsersSnap.forEach((docSnap) => {
+            if (docSnap.id === user.uid) return;
+            renderProfile({ ...docSnap.data(), uid: docSnap.id }, false);
+          });
+
+          
         } catch (err) {
           alert("Error sending request");
           console.error(err);
         }
       };
       window.acceptRequest = async (requestId, fromUid) => {
-        try {
-          const batch = writeBatch(db);
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
 
-          const myUid = auth.currentUser.uid;
+        const batch = writeBatch(db);
+
+        const myUid = user.uid;
 
           // Friend doc for ME
           const myFriendRef = doc(
@@ -863,11 +912,80 @@
           await batch.commit();
 
           await loadFriends();
+          // 🔄 Refresh profile grid so "Add Friend" comes back
+          profilesGrid.innerHTML = "";
+
+          // Render YOU
+          const yourSnap = await getDoc(doc(db, "users", user.uid));
+          if (yourSnap.exists()) {
+            renderProfile({ ...yourSnap.data(), uid: user.uid }, true);
+
+          }
+
+          // Render others
+          const allUsersSnap = await getDocs(collection(db, "users"));
+          allUsersSnap.forEach((docSnap) => {
+            if (docSnap.id === user.uid) return;
+            renderProfile({ ...docSnap.data(), uid: docSnap.id }, false);
+          });
+
           await loadIncomingRequests(auth.currentUser);
 
         } catch (err) {
           console.error("ACCEPT FAILED:", err);
           alert("Failed to accept friend request");
+        }
+      };
+      window.unfriend = async (friendUid) => {
+        try {
+          const user = auth.currentUser;
+          if (!user) return;
+
+          const batch = writeBatch(db);
+
+          const myFriendRef = doc(
+            db,
+            "friends",
+            `${user.uid}_${friendUid}`
+          );
+
+          const theirFriendRef = doc(
+            db,
+            "friends",
+            `${friendUid}_${user.uid}`
+          );
+
+          batch.delete(myFriendRef);
+          batch.delete(theirFriendRef);
+
+          await batch.commit();
+
+          // ✅ Update local state
+          friendsSet.delete(friendUid);
+
+          // ✅ Refresh UI
+          await loadFriends();
+          // 🔄 Refresh profile grid so "Add Friend" comes back
+          profilesGrid.innerHTML = "";
+
+          // Render YOU
+          const yourSnap = await getDoc(doc(db, "users", user.uid));
+          if (yourSnap.exists()) {
+            renderProfile({ ...yourSnap.data(), uid: user.uid }, true);
+
+          }
+
+          // Render others
+          const allUsersSnap = await getDocs(collection(db, "users"));
+          allUsersSnap.forEach((docSnap) => {
+            if (docSnap.id === user.uid) return;
+            renderProfile({ ...docSnap.data(), uid: docSnap.id }, false);
+          });
+
+
+        } catch (err) {
+          console.error("UNFRIEND FAILED:", err);
+          alert("Failed to unfriend");
         }
       };
 
@@ -899,11 +1017,15 @@
         document.getElementById("friendsModal").style.display = "none";
       };
       const friendsBtn = document.getElementById("friendsBtn");
-      friendsBtn.addEventListener("click", openFriends);
+      if (friendsBtn) {
+        friendsBtn.addEventListener("click", openFriends);
+      }
+
 
       async function loadFriends() {
         const user = auth.currentUser;
         if (!user) return;
+        friendsSet.clear();
 
         const friendsList = document.getElementById("friendsList");
         friendsList.innerHTML = "";
@@ -923,6 +1045,7 @@
         for (const docSnap of snap.docs) {
           const data = docSnap.data();
           const friendUid = data.friend;
+          friendsSet.add(friendUid);
 
           const friendSnap = await getDoc(doc(db, "users", friendUid));
           if (!friendSnap.exists()) continue;
@@ -932,7 +1055,26 @@
           const div = document.createElement("div");
           div.style.padding = "10px 0";
           div.style.borderBottom = "1px solid var(--border)";
-          div.innerHTML = `<strong>${friend.name}</strong>`;
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong>${friend.name}</strong>
+              <button
+                style="
+                  background: transparent;
+                  border: 1px solid var(--red);
+                  color: var(--red);
+                  padding: 4px 8px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  font-size: 12px;
+                "
+                onclick="unfriend('${friendUid}')"
+              >
+                Unfriend
+              </button>
+            </div>
+          `;
+
 
           friendsList.appendChild(div);
         }
