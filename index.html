@@ -769,10 +769,7 @@
 
 
       const authModal = document.getElementById("authModal");
-      const betaSeen = localStorage.getItem("betaSeen");
-      if (!betaSeen) {
-        document.getElementById("betaModal").style.display = "flex";
-      }
+      
 
       const userNav = document.getElementById("userNav");
       const profilesGrid = document.getElementById("profilesGrid");
@@ -865,10 +862,7 @@
       window.openAuthIfNeeded = () => {
         authModal.style.display = "flex";
       };
-      window.closeBetaModal = () => {
-        localStorage.setItem("betaSeen", "true");
-        document.getElementById("betaModal").style.display = "none";
-      };
+     
 
       // Open deal modal
       window.openDealFromBanner = () => {
@@ -889,25 +883,21 @@
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
 
-        // 1️⃣ Auth fields first
         if (!email || !password) {
           alert("Email and password required");
           return;
         }
 
-        // 2️⃣ Empty profile fields
         if (!name || !age || !bio) {
           alert("Please fill out all profile fields");
           return;
         }
 
-        // 3️⃣ Age check
         if (!Number.isInteger(age) || age < 13 || age > 120) {
           alert("Age must be a number between 13 and 120");
           return;
         }
 
-        // 4️⃣ Bio length limit
         if (bio.length > 150) {
           alert("Bio must be 150 characters or less");
           return;
@@ -916,11 +906,9 @@
         try {
           let cred;
 
-          // Try creating account
           try {
             cred = await createUserWithEmailAndPassword(auth, email, password);
           } catch (err) {
-            // If account already exists → sign in instead
             if (err.code === "auth/email-already-in-use") {
               cred = await signInWithEmailAndPassword(auth, email, password);
             } else {
@@ -928,7 +916,6 @@
             }
           }
 
-          // Only create Firestore profile if it doesn't exist
           const userRef = doc(db, "users", cred.user.uid);
           const snap = await getDoc(userRef);
 
@@ -937,28 +924,27 @@
               name,
               age,
               bio,
-
-              // 🔒 secure defaults
               plan: "free",
               verified: false,
               friendRequestsEnabled: true,
-
               createdAt: Date.now()
             });
           }
 
-          }
-
           authModal.style.display = "none";
+
         } catch (err) {
           alert(err.message);
         }
       };
 
+
+        
+
       // Auth state listener
-      if (!localStorage.getItem("betaSeen")) {
-        document.getElementById("betaModal").style.display = "flex";
-      }
+     
+        
+      
 
       onAuthStateChanged(auth, async (user) => {
         if (!user) return;
@@ -1168,10 +1154,13 @@
       window.closeFriends = () => {
         document.getElementById("friendsModal").style.display = "none";
       };
-      const friendsBtn = document.getElementById("friendsBtn");
-      if (friendsBtn) {
-        friendsBtn.addEventListener("click", openFriends);
-      }
+      window.addEventListener("DOMContentLoaded", () => {
+        const friendsBtn = document.getElementById("friendsBtn");
+        if (friendsBtn) {
+          friendsBtn.addEventListener("click", openFriends);
+        }
+      });
+
 
 
       async function loadFriends() {
@@ -1180,7 +1169,9 @@
         friendsSet.clear();
 
         const friendsList = document.getElementById("friendsList");
+        if (!friendsList) return;
         friendsList.innerHTML = "";
+
 
         const q = query(
           collection(db, "friends"),
@@ -1257,21 +1248,7 @@
 
     </script>
      
-    <div id="betaModal" class="modal-overlay">
-      <div class="modal-card">
-        <span class="material-icons modal-icon">science</span>
-
-        <h2>FriendConnect is in Beta</h2>
-
-        <p>
-          You're early! This project is still under active development.
-          Some features may change or break.
-        </p>
-
-        <button class="primary-btn" onclick="closeBetaModal()">
-          Got it
-        </button>
-      </div>
+   
     </div>
     <button id="friendsBtn" class="friends-btn">
       Friends
@@ -1291,7 +1268,7 @@
     <footer class="fc-footer">
       <div class="footer-inner">
         <div class="footer-left">
-          <strong>Regalium - A branch of Friend Connect</strong>
+          <strong>FriendConnect</strong>
           <span>Make real connections.</span>
         </div>
 
@@ -1302,7 +1279,7 @@
       </div>
 
       <div class="footer-bottom">
-        RegaliumGF Entertainment
+        © 2026 FriendConnect. All rights reserved.
       </div>
     </footer>
 
