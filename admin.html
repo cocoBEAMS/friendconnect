@@ -8,6 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
+    .plan-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #1e2638;
+      background: #0a0d14;
+      color: #e9ecf1;
+      font-weight: 600;
+    }
+
     body {
       margin: 0;
       font-family: Inter, system-ui, sans-serif;
@@ -126,7 +135,7 @@
   measurementId: "G-R4JKSVM9F7"
 };
 
-  const ADMIN_UID = "LXhqbk8kB7WVkpu41PvlGQhp5pP2"; // 👈 IMPORTANT
+  const ADMIN_UID = "Wl0cjJMgKtW1Fj28aibk7dZSCWi2"; // 👈 IMPORTANT
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -167,23 +176,57 @@
           <span>${uid}</span>
         </div>
 
-        <div>
-          <span class="badge ${verified ? "verified" : "not-verified"}">
-            ${verified ? "Verified" : "Not verified"}
-          </span>
-          <button class="${verified ? "unverify" : ""}">
-            ${verified ? "Unverify" : "Verify"}
-          </button>
-        </div>
-      `;
+       <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+         <select class="plan-select">
+           <option value="free">Regalium</option>
+           <option value="plus">Regalium+</option>
+           <option value="platinum">Platinum</option>
+           <option value="elite">Elite</option>
+         </select>
 
-      div.querySelector("button").onclick = async () => {
+         <button class="verify-btn">
+           ${verified ? "Unverify" : "Verify"}
+         </button>
+
+         <button class="toggle-fr">
+           ${user.friendRequestsEnabled === false ? "Enable Requests" : "Disable Requests"}
+         </button>
+       </div>
+
+      `;
+      // --------------------
+      // ADMIN CONTROLS LOGIC
+      // --------------------
+
+      // Plan dropdown
+      const planSelect = div.querySelector(".plan-select");
+      planSelect.value = user.plan || "free";
+
+      planSelect.onchange = async () => {
+        await updateDoc(doc(db, "users", uid), {
+          plan: planSelect.value
+        });
+        loadUsers();
+      };
+
+      // Verify button
+      div.querySelector(".verify-btn").onclick = async () => {
         await updateDoc(doc(db, "users", uid), {
           verified: !verified
         });
         loadUsers();
       };
 
+      // Friend requests toggle
+      div.querySelector(".toggle-fr").onclick = async () => {
+        await updateDoc(doc(db, "users", uid), {
+          friendRequestsEnabled: !(user.friendRequestsEnabled !== false)
+        });
+        loadUsers();
+      };
+
+
+     
       usersList.appendChild(div);
     });
   }
