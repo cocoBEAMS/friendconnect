@@ -1238,6 +1238,9 @@
           renderProfile({ ...docSnap.data(), uid: docSnap.id }, false);
         });
       }
+document.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
 
 
     </script>
