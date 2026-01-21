@@ -605,7 +605,7 @@
 
       <div class="badge">FriendConnect</div>
       <h2 id="authTitle">Make an account</h2>
-      <p>Create your FriendConnect profile. Your Profile is stored securely in the cloud. Avoid making your password anything important.</p>
+      <p>Create your FriendConnect profile. Your Profile is stored securely in the cloud. Avoid making your password anything important. BY MAKING AN ACCOUNT YOU AGREE TO OUR TERMS, AND PRIVACY POLICY</p>
       <input id="email" placeholder="Email"
         style="width:100%;margin-bottom:8px;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0a0d14;color:var(--text);" />
 
@@ -668,7 +668,8 @@
   </div>
   
     <script type="module">
-      
+      let currentUserProfile = null;
+
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       
       import {
@@ -799,19 +800,31 @@
         card.innerHTML = `
           <div class="avatar">${profile.name[0].toUpperCase()}</div>
 
-        <h3 style="display:flex;align-items:center;gap:6px;">
-          <span>
-            ${profile.name}, ${profile.age ?? "?"}
-          </span>
+       <h3 style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+         <span>
+           ${profile.name}, ${profile.age ?? "?"}
+         </span>
 
-          ${profile.verified ? `
-            <span class="verified-badge" title="Verified account">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15-4-4 1.41-1.41L11 13.17l4.59-4.59L17 10l-6 7z"/>
-              </svg>
-            </span>
-          ` : ""}
-        </h3>
+         ${profile.verified ? `
+           <span class="verified-badge" title="Verified account">
+             <svg viewBox="0 0 24 24" aria-hidden="true">
+               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15-4-4 1.41-1.41L11 13.17l4.59-4.59L17 10l-6 7z"/>
+             </svg>
+           </span>
+         ` : ""}
+
+         ${profile.plan && profile.plan !== "free" ? `
+           <span class="tag" style="
+             border-color:#3b82f6;
+             color:#3b82f6;
+             font-weight:600;
+           ">
+             ${profile.plan === "elite" ? "Elite" :
+               profile.plan === "platinum" ? "Platinum" :
+               "Regalium+"}
+           </span>
+         ` : ""}
+       </h3>
 
 
 
@@ -829,7 +842,14 @@
           ? `<button class="add-friend" disabled>Friends ✓</button>`
           : sentRequests.has(profile.uid)
             ? `<button class="add-friend sent" disabled>Request Sent</button>`
-            : `<button class="add-friend" onclick="sendFriendRequest('${profile.uid}')">Add Friend</button>`
+           : currentUserProfile?.friendRequestsEnabled === false
+           ? `<button class="add-friend" disabled style="opacity:.6">
+               Requests Disabled
+             </button>`
+           : `<button class="add-friend" onclick="sendFriendRequest('${profile.uid}')">
+               Add Friend
+             </button>`
+
         : ""
       }
 
@@ -917,8 +937,12 @@
               name,
               age,
               bio,
+              plan: "free",
+              verified: false,
+              friendRequestsEnabled: true,
               createdAt: Date.now()
             });
+
           }
 
           authModal.style.display = "none";
@@ -947,6 +971,14 @@
         if (!yourSnap.exists()) return;
 
         const yourProfile = yourSnap.data();
+        currentUserProfile = yourProfile;
+        if (yourProfile.friendRequestsEnabled === false) {
+          showAdminNotice(
+            "Friend requests disabled",
+            "An admin has temporarily disabled your ability to send friend requests."
+          );
+        }
+
         userNav.textContent = yourProfile.name;
 
         
@@ -967,6 +999,8 @@
         });
 
       });
+     
+
       window.sendFriendRequest = async (targetUid) => {
         const user = auth.currentUser;
         if (!user) return alert("You must be logged in");
@@ -1197,6 +1231,25 @@
         window.location.href = "chat.html";
       };
 
+      function showAdminNotice(title, message) {
+        if (document.getElementById("adminNotice")) return;
+
+        const notice = document.createElement("div");
+        notice.id = "adminNotice";
+        notice.style.cssText = `
+          max-width:1100px;
+          margin:16px auto;
+          padding:14px 20px;
+          border:1px solid #ef4444;
+          border-radius:14px;
+          background:#140b0b;
+          color:#fca5a5;
+          font-size:14px;
+        `;
+
+        notice.innerHTML = `<strong>${title}</strong><br>${message}`;
+        document.body.prepend(notice);
+      }
 
     </script>
      
