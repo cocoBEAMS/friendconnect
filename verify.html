@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verification Policy – FriendConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --panel: #0f1420;
+      --border: #1e2638;
+      --text: #e9ecf1;
+      --muted: #8b93a7;
+      --blue: #3b82f6;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    nav {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-header .material-icons {
+      color: var(--blue);
+      font-size: 22px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    p {
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    ul {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: rgba(59,130,246,0.05);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">FriendConnect</div>
+  </nav>
+
+  <div class="container">
+    <h1>Verification Policy</h1>
+    <div class="subtitle">
+      Last updated: January 2026
+    </div>
+
+    <!-- WHAT IS VERIFICATION -->
+    <div class="section">
+      <div class="section-header">
+        <span class="material-icons">verified</span>
+        <h2>What is Verification?</h2>
+      </div>
+      <p>
+        Verification is a status granted to select accounts to indicate
+        authenticity and trustworthiness. Verified accounts display a
+        blue checkmark on their profile.
+      </p>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="material-icons">rule</span>
+        <h2>Eligibility Requirements</h2>
+      </div>
+      <ul>
+        <li>A complete and accurate profile (name, age, and bio)</li>
+        <li>Account in good standing with no abuse history</li>
+        <li>Compliance with FriendConnect Terms and Community Guidelines</li>
+        <li>One verified account per individual</li>
+      </ul>
+    </div>
+
+    <!-- REVIEW PROCESS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="material-icons">fact_check</span>
+        <h2>Review Process</h2>
+      </div>
+      <p>
+        Verification is reviewed manually by FriendConnect administrators.
+        Approval is discretionary and not guaranteed.
+      </p>
+
+      <div class="notice">
+        Verification status may be revoked at any time if an account no longer
+        meets eligibility requirements.
+      </div>
+    </div>
+
+    <!-- AVAILABILITY -->
+    <div class="section">
+      <div class="section-header">
+        <span class="material-icons">lock</span>
+        <h2>Availability</h2>
+      </div>
+      <p>
+        Verification requests are currently limited. Public application
+        may become available in the future.
+      </p>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 FriendConnect · Verification does not imply endorsement
+  </footer>
+
+</body>
+</html>
