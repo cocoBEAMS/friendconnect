@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Report User</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      background: #0b0f1a;
+      color: white;
+      font-family: Inter, sans-serif;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e2638;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 14px;
+      color: #9aa3b8;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #b3b9cc;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      margin-top: 6px;
+      background: #12182a;
+      color: white;
+      border: 1px solid #1e2638;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      max-height: 160px;
+    }
+
+    button {
+      margin-top: 24px;
+      padding: 10px 16px;
+      background: #4f6ef7;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #3d59d8;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #8b93a7;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>Friend Connect</header>
+
+  <main>
+    <h1>Report a user</h1>
+    <p>Please report only real issues.</p>
+
+    <label for="username">Username</label>
+    <input id="username" type="text" maxlength="24" placeholder="Enter username">
+
+    <label for="reason">Reason</label>
+    <select id="reason">
+      <option value="">Select a reason</option>
+      <option value="harassment">Harassment / Bullying</option>
+      <option value="inappropriate">Inappropriate Content</option>
+      <option value="impersonation">Impersonation</option>
+      <option value="spam">Spam</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label for="details">Details (optional)</label>
+    <textarea id="details" maxlength="300"
+      placeholder="Brief explanation (optional)"></textarea>
+
+    <button onclick="submitReport()">Submit report</button>
+
+    <div class="small">Reports are reviewed by moderators.</div>
+  </main>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // 🔥 PASTE YOUR FIREBASE CONFIG HERE
+    const firebaseConfig = {
+       apiKey: "AIzaSyCvCAnjI58ns5dWgmcY_saq1w3W_Qe9I7Y",
+  authDomain: "friendconnect-99a50.firebaseapp.com",
+  projectId: "friendconnect-99a50",
+  storageBucket: "friendconnect-99a50.firebasestorage.app",
+  messagingSenderId: "904196830848",
+  appId: "1:904196830848:web:50c15121c2c04f1ea01865",
+      
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.submitReport = async function () {
+      const btn = document.querySelector("button");
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+
+      const username = document.getElementById("username").value.trim();
+      const reason = document.getElementById("reason").value;
+      const details = document.getElementById("details").value.trim();
+
+      if (!username) {
+        alert("Please enter a username.");
+        btn.disabled = false;
+        btn.textContent = "Submit report";
+        return;
+      }
+
+      if (!reason) {
+        alert("Please select a reason.");
+        btn.disabled = false;
+        btn.textContent = "Submit report";
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be logged in to submit a report.");
+        btn.disabled = false;
+        btn.textContent = "Submit report";
+        return;
+      }
+
+
+     
+
+      try {
+        await addDoc(collection(db, "reports"), {
+          reportedUsername: username,
+          reason,
+          details,
+          reportedBy: user.uid,
+          status: "open",
+          createdAt: serverTimestamp()
+        });
+
+        alert("Report submitted successfully.");
+        window.location.href = "index.html"; // or wherever you want
+        } catch (err) {
+          console.error(err);
+          alert("Something went wrong. Try again.");
+
+          btn.disabled = false;
+          btn.textContent = "Submit report";
+        }
+
+    };
+  </script>
+
+</body>
+</html>
