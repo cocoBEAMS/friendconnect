@@ -115,32 +115,17 @@
 <div class="container" id="usersList">
   Loading users…
 </div>
-  <div class="container">
+  <div class="container" id="announcementContainer" style="display:none;">
     <div class="user-card" style="flex-direction: column; align-items: stretch; gap: 12px;">
       <strong style="font-size: 16px;">📢 Global Announcement</strong>
-
-      <textarea
-        id="announcementInput"
-        placeholder="Message shown to all users…"
-        style="
-          width: 100%;
-          min-height: 80px;
-          resize: vertical;
-          padding: 10px;
-          border-radius: 10px;
-          border: 1px solid #1e2638;
-          background: #0a0d14;
-          color: #e9ecf1;
-          font-family: Inter, system-ui, sans-serif;
-        "
-      ></textarea>
-
+      <textarea id="announcementInput" placeholder="Message shown to all users…"></textarea>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button id="sendAnnouncement">Announce</button>
         <button id="disableAnnouncement" class="unverify">Disable</button>
       </div>
     </div>
   </div>
+
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
