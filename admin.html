@@ -109,10 +109,38 @@
 <header>
   <h1>FriendConnect Admin</h1>
 </header>
+  
+  
 
 <div class="container" id="usersList">
   Loading users…
 </div>
+  <div class="container">
+    <div class="user-card" style="flex-direction: column; align-items: stretch; gap: 12px;">
+      <strong style="font-size: 16px;">📢 Global Announcement</strong>
+
+      <textarea
+        id="announcementInput"
+        placeholder="Message shown to all users…"
+        style="
+          width: 100%;
+          min-height: 80px;
+          resize: vertical;
+          padding: 10px;
+          border-radius: 10px;
+          border: 1px solid #1e2638;
+          background: #0a0d14;
+          color: #e9ecf1;
+          font-family: Inter, system-ui, sans-serif;
+        "
+      ></textarea>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="sendAnnouncement">Announce</button>
+        <button id="disableAnnouncement" class="unverify">Disable</button>
+      </div>
+    </div>
+  </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -122,8 +150,11 @@
     collection,
     getDocs,
     doc,
-    updateDoc
+    updateDoc,
+    setDoc,
+    serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 
   const firebaseConfig = {
   apiKey: "AIzaSyCvCAnjI58ns5dWgmcY_saq1w3W_Qe9I7Y",
@@ -135,7 +166,7 @@
   measurementId: "G-R4JKSVM9F7"
 };
 
-  const ADMIN_UID = "0HTiNpLwIxaGtfJh5lWjJEed3K53"; // 👈 IMPORTANT
+  const ADMIN_UID = "Wl0cjJMgKtW1Fj28aibk7dZSCWi2"; // 👈 IMPORTANT
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -230,6 +261,29 @@
       usersList.appendChild(div);
     });
   }
+  const announcementRef = doc(db, "announcements", "global");
+
+  document.getElementById("sendAnnouncement").onclick = async () => {
+    const text = document.getElementById("announcementInput").value.trim();
+    if (!text) return alert("Announcement cannot be empty");
+
+    await setDoc(announcementRef, {
+      active: true,
+      message: text,
+      createdAt: serverTimestamp()
+    });
+
+    alert("Announcement sent 🚀");
+  };
+
+  document.getElementById("disableAnnouncement").onclick = async () => {
+    await setDoc(announcementRef, {
+      active: false
+    }, { merge: true });
+
+    alert("Announcement disabled");
+  };
+
 </script>
 
 </body>
