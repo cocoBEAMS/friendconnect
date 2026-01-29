@@ -8,6 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
+    .plan-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #1e2638;
+      background: #0a0d14;
+      color: #e9ecf1;
+      font-weight: 600;
+    }
+
     body {
       margin: 0;
       font-family: Inter, system-ui, sans-serif;
@@ -56,15 +65,6 @@
       margin-top: 2px;
     }
 
-    .plan-select {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid #1e2638;
-      background: #0a0d14;
-      color: #e9ecf1;
-      font-weight: 600;
-    }
-
     .badge {
       font-size: 12px;
       padding: 4px 10px;
@@ -102,17 +102,6 @@
       margin-top: 80px;
       color: #8b93a7;
     }
-
-    #loginBtn {
-      padding: 10px 18px;
-      border-radius: 8px;
-      background: #3b82f6;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      font-size: 16px;
-    }
   </style>
 </head>
 <body>
@@ -120,29 +109,35 @@
 <header>
   <h1>FriendConnect Admin</h1>
 </header>
+  
+  
 
-<div class="container" id="loginContainer">
-  <button id="loginBtn">Sign in with Google</button>
-</div>
-
-<div class="container" id="usersList" style="display:none;">
+<div class="container" id="usersList">
   Loading users…
 </div>
+  <div class="container" id="announcementContainer" style="display:none;">
+    <div class="user-card" style="flex-direction: column; align-items: stretch; gap: 12px;">
+      <strong style="font-size: 16px;">📢 Global Announcement</strong>
+      <textarea id="announcementInput" placeholder="Message shown to all users…"></textarea>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="sendAnnouncement">Announce</button>
+        <button id="disableAnnouncement" class="unverify">Disable</button>
+      </div>
+    </div>
+  </div>
 
-<script type="module">
+
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { 
-    getAuth, 
-    onAuthStateChanged, 
-    GoogleAuthProvider, 
-    signInWithPopup 
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
   import {
     getFirestore,
     collection,
     getDocs,
     doc,
-    updateDoc
+    updateDoc,
+    setDoc,
+    serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -155,47 +150,46 @@
     measurementId: "G-R4JKSVM9F7"
   };
 
-  const ADMIN_UID = "Wl0cjJMgKtW1Fj28aibk7dZSCWi2"; // 👈 your admin UID
+  const ADMIN_UID = "Wl0cjJMgKtW1Fj28aibk7dZSCWi2";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
 
-  const loginContainer = document.getElementById("loginContainer");
   const usersList = document.getElementById("usersList");
+  const announcementContainer = document.getElementById("announcementContainer");
 
-  // Google login button
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error("Login failed:", err);
-      alert("Login failed. Try disabling popup blockers.");
-    }
-  });
-
-  // Auth state change
+  // ✅ Wait until user is fully loaded and check admin UID safely
   onAuthStateChanged(auth, async (user) => {
-    if (!user) return;
-
-    loginContainer.style.display = "none";
-    usersList.style.display = "block";
-
-    if (user.uid !== ADMIN_UID) {
-      usersList.innerHTML = `
-        <div class="blocked">
-          <h2>Access denied</h2>
-          <p>You are not authorized to view this page.</p>
-          <p style="font-size:12px;opacity:.6">Your UID: ${user.uid}</p>
-        </div>
-      `;
+    if (!user) {
+      showBlocked();
       return;
     }
 
+    // Trim just in case any weird whitespace
+    if ((user.uid || "").trim() !== ADMIN_UID) {
+      showBlocked();
+      return;
+    }
+
+    // If we reach here, admin is verified
+    announcementContainer.style.display = "block";
     loadUsers();
   });
 
+  // Show access denied message
+  function showBlocked() {
+    usersList.innerHTML = `
+      <div class="blocked">
+        <h2>Access denied</h2>
+        <p>You are not authorized to view this page.</p>
+      </div>
+    `;
+  }
+
+  // -------------------------
+  // Load all users
+  // -------------------------
   async function loadUsers() {
     usersList.innerHTML = "";
     const snap = await getDocs(collection(db, "users"));
@@ -213,6 +207,7 @@
           <strong>${user.name || "Unnamed User"}</strong>
           <span>${uid}</span>
         </div>
+
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
           <select class="plan-select">
             <option value="free">Regalium</option>
@@ -220,8 +215,14 @@
             <option value="platinum">Platinum</option>
             <option value="elite">Elite</option>
           </select>
-          <button class="verify-btn">${verified ? "Unverify" : "Verify"}</button>
-          <button class="toggle-fr">${user.friendRequestsEnabled === false ? "Enable Requests" : "Disable Requests"}</button>
+
+          <button class="verify-btn">
+            ${verified ? "Unverify" : "Verify"}
+          </button>
+
+          <button class="toggle-fr">
+            ${user.friendRequestsEnabled === false ? "Enable Requests" : "Disable Requests"}
+          </button>
         </div>
       `;
 
@@ -241,13 +242,40 @@
 
       // Friend requests toggle
       div.querySelector(".toggle-fr").onclick = async () => {
-        await updateDoc(doc(db, "users", uid), { friendRequestsEnabled: !(user.friendRequestsEnabled !== false) });
+        await updateDoc(doc(db, "users", uid), {
+          friendRequestsEnabled: !(user.friendRequestsEnabled !== false)
+        });
         loadUsers();
       };
 
       usersList.appendChild(div);
     });
   }
-</script>
+
+  // -------------------------
+  // Announcements
+  // -------------------------
+  const announcementRef = doc(db, "announcements", "global");
+
+  document.getElementById("sendAnnouncement").onclick = async () => {
+    const text = document.getElementById("announcementInput").value.trim();
+    if (!text) return alert("Announcement cannot be empty");
+
+    await setDoc(announcementRef, {
+      active: true,
+      message: text,
+      createdAt: serverTimestamp()
+    });
+
+    alert("Announcement sent 🚀");
+  };
+
+  document.getElementById("disableAnnouncement").onclick = async () => {
+    await setDoc(announcementRef, { active: false }, { merge: true });
+    alert("Announcement disabled");
+  };
+  </script>
+
+
 </body>
 </html>
